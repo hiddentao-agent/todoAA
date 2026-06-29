@@ -6,6 +6,9 @@ import { FilterBar } from '@/components/Sidebar/FilterBar.tsx';
 import { SortControl } from '@/components/Sidebar/SortControl.tsx';
 import { TaskFormPanel } from '@/components/TaskForm/TaskFormPanel.tsx';
 import { TaskListView } from '@/components/TaskList/TaskListView.tsx';
+import { SettingsPanel } from '@/components/Settings/SettingsPanel.tsx';
+import { OfflineIndicator } from '@/components/shared/OfflineIndicator.tsx';
+import { UpdateBanner } from '@/components/shared/UpdateBanner.tsx';
 import { Toast } from '@/components/shared/Toast.tsx';
 
 export function App() {
@@ -31,6 +34,9 @@ export function App() {
               }
             />
             <TaskFormPanel />
+            <SettingsPanel />
+            <OfflineIndicator />
+            <UpdateBanner />
             <Toast />
           </>
         )}
