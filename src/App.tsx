@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@/components/providers/ThemeProvider.tsx';
 import { DatabaseProvider, dbReady, dbError } from '@/components/providers/DatabaseProvider.tsx';
 import { AppShell } from '@/components/AppShell/AppShell.tsx';
+import { Sidebar } from '@/components/Sidebar/Sidebar.tsx';
 import { TaskFormPanel } from '@/components/TaskForm/TaskFormPanel.tsx';
 import { TaskListView } from '@/components/TaskList/TaskListView.tsx';
 import { Toast } from '@/components/shared/Toast.tsx';
@@ -24,7 +25,7 @@ export function App() {
         ) : (
           <>
             <AppShell
-              sidebar={<Placeholder label="Lists — Phase 3" />}
+              sidebar={<Sidebar />}
               filterBar={<Placeholder label="Filter — Phase 4" />}
               sortControl={<Placeholder label="Sort — Phase 4" />}
               taskList={
