@@ -185,7 +185,8 @@ export class TodoDatabase extends Dexie {
   }
 
   async getAllLists(): Promise<List[]> {
-    return this.lists.orderBy('createdAt').toArray();
+    const all = await this.lists.toArray();
+    return all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   /* ================================================================ */

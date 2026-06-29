@@ -1,12 +1,14 @@
 import { ThemeProvider } from '@/components/providers/ThemeProvider.tsx';
 import { DatabaseProvider, dbReady, dbError } from '@/components/providers/DatabaseProvider.tsx';
 import { AppShell } from '@/components/AppShell/AppShell.tsx';
+import { TaskFormPanel } from '@/components/TaskForm/TaskFormPanel.tsx';
+import { TaskListView } from '@/components/TaskList/TaskListView.tsx';
+import { Toast } from '@/components/shared/Toast.tsx';
 
-// Placeholder components that will be implemented in later phases
 function Placeholder({ label }: { label: string }) {
   return (
     <div style={{ padding: '16px', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-      {label} — coming in later phases
+      {label}
     </div>
   );
 }
@@ -20,27 +22,31 @@ export function App() {
         ) : dbError.value ? (
           <ErrorScreen message={dbError.value} />
         ) : (
-          <AppShell
-            sidebar={<Placeholder label="Sidebar" />}
-            filterBar={<Placeholder label="Filter bar" />}
-            sortControl={<Placeholder label="Sort control" />}
-            taskList={
-              dbReady.value ? (
-                <Placeholder label="Task list" />
-              ) : (
-                <LoadingSkeleton />
-              )
-            }
-          />
+          <>
+            <AppShell
+              sidebar={<Placeholder label="Lists — Phase 3" />}
+              filterBar={<Placeholder label="Filter — Phase 4" />}
+              sortControl={<Placeholder label="Sort — Phase 4" />}
+              taskList={
+                dbReady.value ? (
+                  <TaskListView />
+                ) : (
+                  <InitialSkeleton />
+                )
+              }
+            />
+            <TaskFormPanel />
+            <Toast />
+          </>
         )}
       </DatabaseProvider>
     </ThemeProvider>
   );
 }
 
-function LoadingSkeleton() {
+function InitialSkeleton() {
   return (
-    <div role="progressbar" aria-label="Loading tasks" aria-busy="true" style={{ padding: '16px' }}>
+    <div role="progressbar" aria-label="Loading tasks" aria-busy="true">
       {[1, 2, 3].map((i) => (
         <div
           key={i}

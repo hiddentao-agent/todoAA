@@ -1,0 +1,77 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+  min-height: 40vh;
+}
+
+.iconCircle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+  color: var(--color-text-tertiary);
+}
+
+.heading {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.message {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-5);
+  max-width: 300px;
+}
+
+.cta {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  min-height: var(--tap-target);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.cta:hover {
+  background: var(--color-primary-hover);
+}
+
+.cta:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.secondaryCta {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: var(--border-thin);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  min-height: var(--tap-target);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.secondaryCta:hover {
+  background: var(--color-surface-hover);
+}
+
+.secondaryCta:focus-visible {
+  box-shadow: var(--shadow-focus);
+}

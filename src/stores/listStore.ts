@@ -27,7 +27,8 @@ export const defaultList = computed(() => {
 // --- Operations ---
 
 export async function loadLists(): Promise<void> {
-  const allLists = await db.getAllLists();
+  const all = await db.lists.toArray();
+  const allLists = all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   lists.value = allLists;
   const stats = await db.getAllListStats();
   listStats.value = stats;
@@ -57,7 +58,8 @@ export async function deleteListCascade(id: string): Promise<void> {
   await db.deleteListCascade(id);
   // If we deleted the current list, switch to default
   if (currentListId.value === id) {
-    const allLists = await db.getAllLists();
+    const all = await db.lists.toArray();
+  const allLists = all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     currentListId.value = allLists[0]?.id ?? null;
     if (currentListId.value) {
       localStorage.setItem('todo-current-list', currentListId.value);
