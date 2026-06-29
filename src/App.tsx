@@ -2,17 +2,11 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider.tsx';
 import { DatabaseProvider, dbReady, dbError } from '@/components/providers/DatabaseProvider.tsx';
 import { AppShell } from '@/components/AppShell/AppShell.tsx';
 import { Sidebar } from '@/components/Sidebar/Sidebar.tsx';
+import { FilterBar } from '@/components/Sidebar/FilterBar.tsx';
+import { SortControl } from '@/components/Sidebar/SortControl.tsx';
 import { TaskFormPanel } from '@/components/TaskForm/TaskFormPanel.tsx';
 import { TaskListView } from '@/components/TaskList/TaskListView.tsx';
 import { Toast } from '@/components/shared/Toast.tsx';
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <div style={{ padding: '16px', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-      {label}
-    </div>
-  );
-}
 
 export function App() {
   return (
@@ -26,8 +20,8 @@ export function App() {
           <>
             <AppShell
               sidebar={<Sidebar />}
-              filterBar={<Placeholder label="Filter — Phase 4" />}
-              sortControl={<Placeholder label="Sort — Phase 4" />}
+              filterBar={<FilterBar />}
+              sortControl={<SortControl />}
               taskList={
                 dbReady.value ? (
                   <TaskListView />
