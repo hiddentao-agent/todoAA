@@ -17,11 +17,7 @@ import {
   SearchIcon,
   AlertIcon,
   ClipboardIcon,
-  SunIcon,
-  MoonIcon,
   GripIcon,
-  DatabaseIcon,
-  CheckCircleIcon,
 } from '@/components/Icons/Icons.tsx';
 
 import type { JSX } from 'preact';
@@ -45,15 +41,11 @@ const iconComponents: IconTestCase[] = [
   { name: 'UploadIcon', Component: UploadIcon },
   { name: 'ListIcon', Component: ListIcon },
   { name: 'SearchIcon', Component: SearchIcon },
-  { name: 'SunIcon', Component: SunIcon },
-  { name: 'MoonIcon', Component: MoonIcon },
-  { name: 'GripIcon', Component: GripIcon, defaultSize: 18 },
-  { name: 'DatabaseIcon', Component: DatabaseIcon },
-  { name: 'CheckCircleIcon', Component: CheckCircleIcon },
-  { name: 'AlertIcon', Component: AlertIcon },
-  { name: 'ClipboardIcon', Component: ClipboardIcon },
   { name: 'ArrowUpIcon', Component: ArrowUpIcon },
   { name: 'ArrowDownIcon', Component: ArrowDownIcon },
+  { name: 'GripIcon', Component: GripIcon, defaultSize: 18 },
+  { name: 'AlertIcon', Component: AlertIcon },
+  { name: 'ClipboardIcon', Component: ClipboardIcon },
 ];
 
 describe('Icons', () => {

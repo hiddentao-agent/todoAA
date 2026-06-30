@@ -6,7 +6,7 @@ import type { Task } from '@/db/todo-schema.ts';
 
 // --- Filtered tasks ---
 
-export const filteredTasks = computed(() => {
+const filteredTasks = computed(() => {
   const allTasks = tasks.value;
   const filter = activeFilter.value;
 

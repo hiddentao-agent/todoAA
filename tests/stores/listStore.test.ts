@@ -9,7 +9,6 @@ import {
   selectList,
   lists,
   currentListId,
-  defaultList,
 } from '@/stores/listStore.ts';
 
 describe('listStore', () => {
@@ -48,7 +47,7 @@ describe('listStore', () => {
   });
 
   it('prevents deleting the default list', async () => {
-    const defaultId = defaultList.value!.id;
+    const defaultId = lists.value.find((l) => l.isDefault)!.id;
     await expect(deleteListCascade(defaultId)).rejects.toThrow('Cannot delete the default list');
   });
 

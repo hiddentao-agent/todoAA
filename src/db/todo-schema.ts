@@ -146,8 +146,8 @@ export class TodoDatabase extends Dexie {
 
   async createList(name: string): Promise<List> {
     const sanitized = sanitizeString(name);
-    if (!sanitized || sanitized.length > 200) {
-      throw new Error('List name must be 1–200 characters');
+    if (!sanitized || sanitized.length > MAX_LIST_NAME_LENGTH) {
+      throw new Error(`List name must be 1–${MAX_LIST_NAME_LENGTH} characters`);
     }
     const now = new Date().toISOString();
     const list: List = {
@@ -163,8 +163,8 @@ export class TodoDatabase extends Dexie {
 
   async renameList(id: string, name: string): Promise<void> {
     const sanitized = sanitizeString(name);
-    if (!sanitized || sanitized.length > 200) {
-      throw new Error('List name must be 1–200 characters');
+    if (!sanitized || sanitized.length > MAX_LIST_NAME_LENGTH) {
+      throw new Error(`List name must be 1–${MAX_LIST_NAME_LENGTH} characters`);
     }
     await this.lists.update(id, {
       name: sanitized,
@@ -195,14 +195,14 @@ export class TodoDatabase extends Dexie {
 
   async createTask(input: CreateTaskInput): Promise<Task> {
     const sanitizedTitle = sanitizeString(input.title);
-    if (!sanitizedTitle || sanitizedTitle.length > 500) {
-      throw new Error('Title must be 1–500 characters');
+    if (!sanitizedTitle || sanitizedTitle.length > MAX_TITLE_LENGTH) {
+      throw new Error(`Title must be 1–${MAX_TITLE_LENGTH} characters`);
     }
 
     if (input.description != null) {
       const sanitizedDesc = sanitizeString(input.description);
-      if (sanitizedDesc.length > 5000) {
-        throw new Error('Description must be ≤5000 characters');
+      if (sanitizedDesc.length > MAX_DESCRIPTION_LENGTH) {
+        throw new Error(`Description must be ≤${MAX_DESCRIPTION_LENGTH} characters`);
       }
     }
 
@@ -262,8 +262,8 @@ export class TodoDatabase extends Dexie {
 
     if (input.title !== undefined) {
       const sanitized = sanitizeString(input.title);
-      if (!sanitized || sanitized.length > 500) {
-        throw new Error('Title must be 1–500 characters');
+      if (!sanitized || sanitized.length > MAX_TITLE_LENGTH) {
+        throw new Error(`Title must be 1–${MAX_TITLE_LENGTH} characters`);
       }
       changes.title = sanitized;
     }
@@ -271,8 +271,8 @@ export class TodoDatabase extends Dexie {
     if (input.description !== undefined) {
       if (input.description != null) {
         const sanitized = sanitizeString(input.description);
-        if (sanitized.length > 5000) {
-          throw new Error('Description must be ≤5000 characters');
+        if (sanitized.length > MAX_DESCRIPTION_LENGTH) {
+          throw new Error(`Description must be ≤${MAX_DESCRIPTION_LENGTH} characters`);
         }
         changes.description = sanitized;
       } else {
@@ -581,6 +581,14 @@ const MAX_TASKS = 10_000;
 const MAX_LISTS = 1_000;
 export const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5 MB
 
+/* ------------------------------------------------------------------ */
+/*  Shared limits                                                      */
+/* ------------------------------------------------------------------ */
+
+export const MAX_TITLE_LENGTH = 500;
+export const MAX_DESCRIPTION_LENGTH = 5000;
+export const MAX_LIST_NAME_LENGTH = 200;
+
 export class ImportValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -636,8 +644,8 @@ export function validateImportPayload(data: unknown): ImportValidationError | nu
         `List '${list.id}': ${(e as SanitizationError).message}`,
       );
     }
-    if (typeof list.name === 'string' && (list.name.length === 0 || list.name.length > 200)) {
-      return new ImportValidationError(`List '${list.id}': name must be 1–200 characters`);
+    if (typeof list.name === 'string' && (list.name.length === 0 || list.name.length > MAX_LIST_NAME_LENGTH)) {
+      return new ImportValidationError(`List '${list.id}': name must be 1–${MAX_LIST_NAME_LENGTH} characters`);
     }
   }
 
@@ -657,8 +665,8 @@ export function validateImportPayload(data: unknown): ImportValidationError | nu
         `Task '${task.id}': ${(e as SanitizationError).message}`,
       );
     }
-    if (typeof task.title === 'string' && (task.title.length === 0 || task.title.length > 500)) {
-      return new ImportValidationError(`Task '${task.id}': title must be 1–500 characters`);
+    if (typeof task.title === 'string' && (task.title.length === 0 || task.title.length > MAX_TITLE_LENGTH)) {
+      return new ImportValidationError(`Task '${task.id}': title must be 1–${MAX_TITLE_LENGTH} characters`);
     }
     if (task.description != null && typeof task.description === 'string') {
       try {
@@ -668,8 +676,8 @@ export function validateImportPayload(data: unknown): ImportValidationError | nu
           `Task '${task.id}': ${(e as SanitizationError).message}`,
         );
       }
-      if (task.description.length > 5000) {
-        return new ImportValidationError(`Task '${task.id}': description must be ≤5000 characters`);
+      if (task.description.length > MAX_DESCRIPTION_LENGTH) {
+        return new ImportValidationError(`Task '${task.id}': description must be ≤${MAX_DESCRIPTION_LENGTH} characters`);
       }
     }
     if (task.priority !== undefined && !isValidPriority(task.priority as string)) {

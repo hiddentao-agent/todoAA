@@ -3,7 +3,6 @@ import { tasks } from '@/stores/taskStore.ts';
 import { lists, listStats, currentListId } from '@/stores/listStore.ts';
 import { activeFilter, activeSort, sortDirection } from '@/stores/uiStore.ts';
 import {
-  filteredTasks,
   visibleTasks,
   listsWithCounts,
   currentListStats,
@@ -57,9 +56,10 @@ beforeEach(() => {
 
 /* ------------------------------------------------------------------ */
 /*  filteredTasks — computed from tasks + activeFilter                 */
+/*  (tested through visibleTasks with manual sort to preserve order)   */
 /* ------------------------------------------------------------------ */
 
-describe('filteredTasks', () => {
+describe('filteredTasks (via visibleTasks)', () => {
   const sampleTasks: Task[] = [
     makeTask({ id: '1', title: 'Active task', completed: false }),
     makeTask({ id: '2', title: 'Done task', completed: true }),
@@ -68,47 +68,50 @@ describe('filteredTasks', () => {
 
   beforeEach(() => {
     tasks.value = sampleTasks;
+    activeSort.value = 'manual';
+    sortDirection.value = 'asc';
   });
 
   it('returns all tasks when filter is "all"', () => {
     activeFilter.value = 'all';
-    expect(filteredTasks.value).toHaveLength(3);
+    expect(visibleTasks.value).toHaveLength(3);
   });
 
   it('returns only active (non-completed) tasks when filter is "active"', () => {
     activeFilter.value = 'active';
-    const result = filteredTasks.value;
+    const result = visibleTasks.value;
     expect(result).toHaveLength(2);
     expect(result.every((t) => !t.completed)).toBe(true);
   });
 
   it('returns only completed tasks when filter is "completed"', () => {
     activeFilter.value = 'completed';
-    const result = filteredTasks.value;
+    const result = visibleTasks.value;
     expect(result).toHaveLength(1);
     expect(result[0]!.completed).toBe(true);
   });
 
   it('reacts to filter changes', () => {
-    expect(filteredTasks.value).toHaveLength(3);
+    expect(visibleTasks.value).toHaveLength(3);
     activeFilter.value = 'active';
-    expect(filteredTasks.value).toHaveLength(2);
+    expect(visibleTasks.value).toHaveLength(2);
     activeFilter.value = 'completed';
-    expect(filteredTasks.value).toHaveLength(1);
+    expect(visibleTasks.value).toHaveLength(1);
   });
 
   it('reacts to task signal changes', () => {
     activeFilter.value = 'active';
-    expect(filteredTasks.value).toHaveLength(2);
+    expect(visibleTasks.value).toHaveLength(2);
 
     // Complete the active task
     tasks.value = tasks.value.map((t) =>
       t.id === '1' ? { ...t, completed: true } : t,
     );
     // Now only 1 active task remains
-    expect(filteredTasks.value).toHaveLength(1);
-    expect(filteredTasks.value[0]!.id).toBe('3');
+    expect(visibleTasks.value).toHaveLength(1);
+    expect(visibleTasks.value[0]!.id).toBe('3');
   });
+
 });
 
 /* ------------------------------------------------------------------ */

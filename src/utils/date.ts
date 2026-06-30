@@ -30,9 +30,3 @@ export function formatDate(date: Date | string | null | undefined): string {
     day: 'numeric',
   });
 }
-
-export function toISODateString(date: Date | null | undefined): string | null {
-  if (!date) return null;
-  if (isNaN(date.getTime())) return null;
-  return date.toISOString().split('T')[0]!;
-}

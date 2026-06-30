@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getDueDateStatus, formatDate, toISODateString } from '@/utils/date.ts';
+import { getDueDateStatus, formatDate } from '@/utils/date.ts';
 
 describe('getDueDateStatus', () => {
   it('returns null for null input', () => {
@@ -46,19 +46,14 @@ describe('formatDate', () => {
     expect(result).toBeTruthy();
     expect(typeof result).toBe('string');
   });
-});
 
-describe('toISODateString', () => {
-  it('returns null for null', () => {
-    expect(toISODateString(null)).toBeNull();
+  it('returns empty string for invalid date string', () => {
+    expect(formatDate('not-a-date')).toBe('');
   });
 
-  it('returns ISO date string for valid date', () => {
-    const date = new Date('2026-06-29');
-    expect(toISODateString(date)).toBe('2026-06-29');
-  });
-
-  it('returns null for invalid date', () => {
-    expect(toISODateString(new Date('invalid'))).toBeNull();
+  it('returns formatted date for Date object', () => {
+    const result = formatDate(new Date('2026-06-29'));
+    expect(result).toBeTruthy();
+    expect(typeof result).toBe('string');
   });
 });

@@ -4,9 +4,10 @@ import { useFocusTrap } from '@/hooks/useFocusTrap.ts';
 import { taskFormOpen, editingTaskId, closeTaskForm, showToast } from '@/stores/uiStore.ts';
 import { visibleTasks } from '@/stores/derived.ts';
 import { lists } from '@/stores/listStore.ts';
-import { createTask, updateTask } from '@/stores/taskStore.ts';
+import { createTask, updateTask, moveTaskToList } from '@/stores/taskStore.ts';
 import { sanitizeString } from '@/utils/sanitize.ts';
 import { CloseIcon } from '@/components/Icons/Icons.tsx';
+import { MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH } from '@/db/todo-schema.ts';
 import styles from './TaskFormPanel.module.css';
 
 const PRIORITIES = ['none', 'low', 'medium', 'high'] as const;
@@ -65,8 +66,8 @@ export function TaskFormPanel() {
       const sanitized = sanitizeString(title);
       if (!sanitized) {
         newErrors.title = 'Title is required';
-      } else if (sanitized.length > 500) {
-        newErrors.title = 'Title must be 500 characters or less';
+      } else if (sanitized.length > MAX_TITLE_LENGTH) {
+        newErrors.title = `Title must be ${MAX_TITLE_LENGTH} characters or less`;
       }
     } catch {
       newErrors.title = 'Title contains invalid characters';
@@ -75,8 +76,8 @@ export function TaskFormPanel() {
     if (description) {
       try {
         const sanitized = sanitizeString(description);
-        if (sanitized.length > 5000) {
-          newErrors.description = 'Description must be 5000 characters or less';
+        if (sanitized.length > MAX_DESCRIPTION_LENGTH) {
+          newErrors.description = `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`;
         }
       } catch {
         newErrors.description = 'Description contains invalid characters';
@@ -99,12 +100,17 @@ export function TaskFormPanel() {
     try {
       const task = editingTask.value;
       if (task) {
+        // If the user changed the list, use moveTaskToList to properly
+        // recalculate the task's order in the target list (N1 fix).
+        if (listId !== task.listId) {
+          await moveTaskToList(task.id, listId);
+        }
         await updateTask(task.id, {
           title,
           description: description || null,
           dueDate: dueDate || null,
           priority,
-          listId,
+          ...(listId !== task.listId ? {} : { listId }),
         });
         showToast('Task saved');
       } else {
@@ -157,7 +163,7 @@ export function TaskFormPanel() {
               value={title}
               onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
               placeholder="What needs to be done?"
-              maxLength={500}
+              maxLength={MAX_TITLE_LENGTH}
               autofocus
               aria-describedby={errors.title ? 'title-error' : undefined}
             />
@@ -172,7 +178,7 @@ export function TaskFormPanel() {
               value={description}
               onInput={(e) => setDescription((e.target as HTMLTextAreaElement).value)}
               placeholder="Add details..."
-              maxLength={5000}
+              maxLength={MAX_DESCRIPTION_LENGTH}
               rows={3}
               aria-describedby={errors.description ? 'desc-error' : undefined}
             />

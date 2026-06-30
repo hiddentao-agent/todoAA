@@ -4,6 +4,7 @@ import { TodoDatabase } from '@/db/todo-schema.ts';
 import { initializeListStore, loadLists } from '@/stores/listStore.ts';
 import { initializeTaskStore, loadTasks } from '@/stores/taskStore.ts';
 import { loadSortPreference } from '@/stores/uiStore.ts';
+import { requestPersistentStorage } from '@/utils/storage.ts';
 import { signal } from '@preact/signals';
 
 // Singleton database instance
@@ -45,6 +46,10 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
         loadSortPreference();
 
         dbReady.value = true;
+
+        // Request persistent storage so the browser doesn't evict data
+        // under storage pressure (spec §7.2, Phase 5 task 10).
+        requestPersistentStorage();
       } catch (error) {
         if (error instanceof Error) {
           // Check if IndexedDB is unavailable

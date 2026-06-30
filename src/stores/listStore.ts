@@ -21,10 +21,6 @@ export const currentList = computed(() => {
   return lists.value.find((l) => l.id === currentListId.value) ?? null;
 });
 
-export const defaultList = computed(() => {
-  return lists.value.find((l) => l.isDefault) ?? null;
-});
-
 // --- Operations ---
 
 export async function loadLists(): Promise<void> {
