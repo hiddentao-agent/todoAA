@@ -85,12 +85,6 @@ export interface ImportResult {
   tasksSkipped: number;
 }
 
-export interface ImportError {
-  message: string;
-  record?: string;
-  field?: string;
-}
-
 /* ------------------------------------------------------------------ */
 /*  List stats                                                         */
 /* ------------------------------------------------------------------ */
