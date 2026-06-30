@@ -325,6 +325,19 @@ describe('Sidebar — create list', () => {
     });
     expect(showToast).toHaveBeenCalledWith('Create failed');
   });
+
+  it('shows "Operation failed" when create rejects with a non-Error value', async () => {
+    // @ts-expect-error createList is mocked
+    createList.mockRejectedValueOnce('plain string error');
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Create new list'));
+    const input = screen.getByLabelText('New list name');
+    fireEvent.input(input, { target: { value: 'Shopping' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith('Operation failed');
+    });
+  });
 });
 
 describe('Sidebar — rename list', () => {
@@ -426,6 +439,20 @@ describe('Sidebar — rename list', () => {
       expect(screen.queryByDisplayValue('Office')).toBeNull();
     });
     expect(showToast).toHaveBeenCalledWith('Rename failed');
+  });
+
+  it('shows "Operation failed" when rename rejects with a non-Error value', async () => {
+    // @ts-expect-error renameList is mocked
+    renameList.mockRejectedValueOnce('plain string error');
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Rename list: Work'));
+    const editInput = screen.getByDisplayValue('Work');
+    fireEvent.input(editInput, { target: { value: 'Office' } });
+    fireEvent.keyDown(editInput, { key: 'Enter' });
+    await vi.waitFor(() => {
+      expect(screen.queryByDisplayValue('Office')).toBeNull();
+    });
+    expect(showToast).toHaveBeenCalledWith('Operation failed');
   });
 });
 
