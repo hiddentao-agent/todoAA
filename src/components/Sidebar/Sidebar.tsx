@@ -191,7 +191,7 @@ export function Sidebar() {
               onBlur={() => { if (!newListName.trim()) setCreating(false); }}
               onKeyDown={handleCreateKeyDown}
               placeholder="List name"
-              maxLength={200}
+              maxLength={MAX_LIST_NAME_LENGTH}
               aria-label="New list name"
             />
           ) : (
