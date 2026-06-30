@@ -84,4 +84,37 @@ describe('listStore', () => {
     await deleteListCascade(newList.id);
     expect(currentListId.value).toBe(lists.value[0]!.id);
   });
+
+  it('loadLists restores stored list ID when it matches a loaded list', async () => {
+    // Create a second list so we have something to reference
+    const secondList = await createList('Second List');
+    expect(lists.value.length).toBe(2);
+
+    const { STORAGE_KEY_CURRENT_LIST } = await import('@/utils/storage-keys.ts');
+    localStorage.setItem(STORAGE_KEY_CURRENT_LIST, secondList.id);
+    currentListId.value = null;
+
+    const { loadLists } = await import('@/stores/listStore.ts');
+    await loadLists();
+
+    // currentListId should be set to the stored value since it exists
+    expect(currentListId.value).toBe(secondList.id);
+    localStorage.removeItem(STORAGE_KEY_CURRENT_LIST);
+  });
+
+  it('loadLists sets first list when stored ID does not match any list', async () => {
+    await createList('Second List');
+    expect(lists.value.length).toBe(2);
+
+    const { STORAGE_KEY_CURRENT_LIST } = await import('@/utils/storage-keys.ts');
+    localStorage.setItem(STORAGE_KEY_CURRENT_LIST, 'nonexistent-id');
+    currentListId.value = null;
+
+    const { loadLists } = await import('@/stores/listStore.ts');
+    await loadLists();
+
+    // Should fall back to first list
+    expect(currentListId.value).toBe(lists.value[0]!.id);
+    localStorage.removeItem(STORAGE_KEY_CURRENT_LIST);
+  });
 });

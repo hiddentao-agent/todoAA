@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TodoDatabase } from '@/db/todo-schema.ts';
-import { initializeTaskStore, loadTasks, createTask, updateTask, toggleTaskCompletion, deleteTask, reorderTasks, tasks } from '@/stores/taskStore.ts';
+import { initializeTaskStore, loadTasks, createTask, updateTask, toggleTaskCompletion, deleteTask, reorderTasks, moveTaskToList, tasks, tasksError } from '@/stores/taskStore.ts';
 import { initializeListStore, loadLists, currentListId, lists } from '@/stores/listStore.ts';
 
 describe('taskStore', () => {
@@ -18,6 +18,8 @@ describe('taskStore', () => {
     initializeListStore(db);
     initializeTaskStore(db);
     await loadLists();
+    tasks.value = [];
+    tasksError.value = null;
   });
 
   it('creates a task and updates signals', async () => {
@@ -97,5 +99,55 @@ describe('taskStore', () => {
     const final = tasks.value.find((t) => t.id === task.id);
     // With atomic transactions, the final state should be consistent
     expect(final).toBeDefined();
+  });
+
+  it('reorderTasks does nothing when currentListId is null', async () => {
+    currentListId.value = null;
+    // Should not throw
+    await expect(reorderTasks([])).resolves.toBeUndefined();
+  });
+
+  it('loadTasks sets tasksError when db operation fails', async () => {
+    const listId = lists.value[0]!.id;
+    currentListId.value = listId;
+
+    // Spy on the actual db instance method to make it throw
+    vi.spyOn(db, 'getTasksForList').mockRejectedValue(new Error('DB error'));
+
+    await loadTasks();
+
+    expect(tasksError.value).toBe('DB error');
+    expect(tasks.value).toHaveLength(0);
+  });
+
+  it('loadTasks handles non-Error rejection gracefully', async () => {
+    const listId = lists.value[0]!.id;
+    currentListId.value = listId;
+
+    // Spy with non-Error rejection
+    vi.spyOn(db, 'getTasksForList').mockRejectedValue('string error');
+
+    await loadTasks();
+
+    // tasksError should NOT be set (the catch only sets for Error instances)
+    expect(tasksError.value).toBeNull();
+  });
+
+  it('moves a task to another list', async () => {
+    const listId1 = lists.value[0]!.id;
+    const list2 = await db.createList('Second list');
+    await loadLists();
+    currentListId.value = listId1;
+
+    const task = await createTask({ title: 'Movable', listId: listId1 });
+
+    await moveTaskToList(task.id, list2.id);
+
+    // Switch to the destination list and reload
+    currentListId.value = list2.id;
+    await loadTasks();
+    const moved = tasks.value.find((t) => t.id === task.id);
+    expect(moved).toBeDefined();
+    expect(moved!.listId).toBe(list2.id);
   });
 });
