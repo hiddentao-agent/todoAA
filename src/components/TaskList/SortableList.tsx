@@ -1,96 +1,71 @@
-import { useState, useCallback } from 'preact/hooks';
-import { useComputed } from '@preact/signals';
-import { activeSort, showToast } from '@/stores/uiStore.ts';
+import { useEffect, useRef } from 'preact/hooks';
+import { dragAndDrop, tearDown, updateConfig } from '@formkit/drag-and-drop';
+import { activeSort } from '@/stores/uiStore.ts';
+import { reorderTasks } from '@/stores/taskStore.ts';
 import { visibleTasks } from '@/stores/derived.ts';
+import type { Task } from '@/db/todo-schema.ts';
 
-interface DragState {
-  dragIndex: number | null;
-  overIndex: number | null;
-}
+/*
+ * useSortableList — hook that wires @formkit/drag-and-drop to the task list.
+ * Provides native drag-and-drop AND keyboard reordering (Arrow keys, Space,
+ * Enter to pick up/drop, Escape to cancel) out of the box.
+ *
+ * Returns a ref to attach to the list container element.
+ * Drag-and-drop is only active when sort mode is 'manual'.
+ */
 
-export function useDragAndDrop(onReorder: (ids: string[]) => Promise<void>) {
-  const [dragState, setDragState] = useState<DragState>({
-    dragIndex: null,
-    overIndex: null,
-  });
+const DRAG_HANDLE_SELECTOR = '[data-drag-handle]';
 
-  const sortMode = useComputed(() => activeSort.value);
-  const isManual = sortMode.value === 'manual';
+export function useSortableList() {
+  const listRef = useRef<HTMLUListElement>(null);
+  const initializedRef = useRef(false);
 
-  const handleDragStart = useCallback(
-    (e: DragEvent, index: number) => {
-      if (!isManual) return;
-      e.dataTransfer!.effectAllowed = 'move';
-      e.dataTransfer!.setData('text/plain', String(index));
-      setDragState({ dragIndex: index, overIndex: null });
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
 
-      requestAnimationFrame(() => {
-        const el = e.target as HTMLElement;
-        el.classList.add('dragging');
-      });
-    },
-    [isManual],
-  );
+    // Build the task lookup from current signal value at init time.
+    // getValues is called on each drag operation, so it always reads current DOM.
+    const getValues = (): Task[] => {
+      const items = el.querySelectorAll<HTMLElement>('[data-task-id]');
+      const taskMap = new Map(visibleTasks.value.map((t) => [t.id, t]));
+      return Array.from(items)
+        .map((item) => {
+          const id = item.dataset.taskId;
+          return id ? taskMap.get(id) : undefined;
+        })
+        .filter((t): t is Task => t != null);
+    };
 
-  const handleDragOver = useCallback(
-    (e: DragEvent, index: number) => {
-      if (!isManual) return;
-      e.preventDefault();
-      e.dataTransfer!.dropEffect = 'move';
-      setDragState((prev: DragState) => ({ ...prev, overIndex: index }));
-    },
-    [isManual],
-  );
+    dragAndDrop<Task>({
+      parent: el,
+      getValues,
+      setValues: (values: Task[]) => {
+        void reorderTasks(values.map((t) => t.id));
+      },
+      config: {
+        dragHandle: DRAG_HANDLE_SELECTOR,
+        sortable: activeSort.value === 'manual',
+      },
+    });
 
-  const handleDragLeave = useCallback(
-    (e: DragEvent) => {
-      if (!isManual) return;
-      const target = e.currentTarget as HTMLElement;
-      if (!target.contains(e.relatedTarget as Node)) {
-        setDragState((prev: DragState) => ({ ...prev, overIndex: null }));
+    initializedRef.current = true;
+
+    // Watch for sort mode changes to toggle sortable via updateConfig
+    const unsubscribe = activeSort.subscribe((newSort) => {
+      if (initializedRef.current && el) {
+        updateConfig<Task>(el, { sortable: newSort === 'manual' });
       }
-    },
-    [isManual],
-  );
+    });
 
-  const handleDrop = useCallback(
-    async (e: DragEvent, index: number) => {
-      if (!isManual) return;
-      e.preventDefault();
-
-      const fromIndex = Number(e.dataTransfer!.getData('text/plain'));
-      if (isNaN(fromIndex) || fromIndex === index) {
-        setDragState({ dragIndex: null, overIndex: null });
-        return;
+    return () => {
+      unsubscribe();
+      if (el) {
+        tearDown(el);
+        initializedRef.current = false;
       }
-
-      const tasks = [...visibleTasks.value];
-      const [moved] = tasks.splice(fromIndex, 1);
-      tasks.splice(index, 0, moved!);
-
-      try {
-        await onReorder(tasks.map((t) => t.id));
-        showToast('Task reordered');
-      } catch {
-        showToast('Failed to reorder');
-      }
-
-      setDragState({ dragIndex: null, overIndex: null });
-    },
-    [isManual, onReorder],
-  );
-
-  const handleDragEnd = useCallback(() => {
-    setDragState({ dragIndex: null, overIndex: null });
+    };
   }, []);
 
-  return {
-    dragState,
-    isManual,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleDragEnd,
-  };
+  return listRef;
 }

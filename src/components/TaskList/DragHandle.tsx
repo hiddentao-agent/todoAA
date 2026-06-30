@@ -2,12 +2,18 @@ import { GripIcon } from '@/components/Icons/Icons.tsx';
 import styles from './DragHandle.module.css';
 
 interface DragHandleProps {
-  index: number;
-  onDragStart: (e: DragEvent, index: number) => void;
   visible: boolean;
 }
 
-export function DragHandle({ index, onDragStart, visible }: DragHandleProps) {
+/*
+ * DragHandle — a grip icon used as the drag initiation point.
+ * Marked with data-drag-handle so @formkit/drag-and-drop can
+ * restrict dragging to this element only.
+ *
+ * When !visible (sort mode != 'manual'), renders an empty
+ * placeholder to preserve alignment.
+ */
+export function DragHandle({ visible }: DragHandleProps) {
   if (!visible) {
     return <div class={styles.placeholder} />;
   }
@@ -15,8 +21,8 @@ export function DragHandle({ index, onDragStart, visible }: DragHandleProps) {
   return (
     <button
       class={styles.handle}
-      draggable
-      onDragStart={(e) => onDragStart(e, index)}
+      type="button"
+      data-drag-handle
       aria-label="Drag to reorder"
       aria-roledescription="sortable"
     >

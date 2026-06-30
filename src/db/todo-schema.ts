@@ -137,7 +137,7 @@ export class TodoDatabase extends Dexie {
       await this.lists.add(list);
       return list;
     }
-    return existing[0]!;
+    return existing.find((l) => l.isDefault) ?? existing[0]!;
   }
 
   /* ================================================================ */
@@ -321,18 +321,25 @@ export class TodoDatabase extends Dexie {
    * inside a single Dexie transaction — no read-before-write race.
    */
   async toggleTaskCompletion(id: string): Promise<boolean> {
-    return this.transaction('rw', this.tasks, async () => {
-      const task = await this.tasks.get(id);
-      if (!task) throw new Error(`Task not found: ${id}`);
+    try {
+      return await this.transaction('rw', this.tasks, async () => {
+        const task = await this.tasks.get(id);
+        if (!task) throw new Error(`Task not found: ${id}`);
 
-      const newCompleted = !task.completed;
-      await this.tasks.update(id, {
-        completed: newCompleted,
-        updatedAt: new Date().toISOString(),
+        const newCompleted = !task.completed;
+        await this.tasks.update(id, {
+          completed: newCompleted,
+          updatedAt: new Date().toISOString(),
+        });
+
+        return newCompleted;
       });
-
-      return newCompleted;
-    });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
   }
 
   async deleteTask(id: string): Promise<void> {
@@ -351,44 +358,58 @@ export class TodoDatabase extends Dexie {
    * values inside a single transaction. Two rapid reorders cannot interleave.
    */
   async reorderTasks(listId: string, orderedIds: string[]): Promise<void> {
-    await this.transaction('rw', this.tasks, async () => {
-      const tasks = await this.tasks.where('listId').equals(listId).toArray();
-      const taskMap = new Map(tasks.map((t) => [t.id, t]));
+    try {
+      await this.transaction('rw', this.tasks, async () => {
+        const tasks = await this.tasks.where('listId').equals(listId).toArray();
+        const taskMap = new Map(tasks.map((t) => [t.id, t]));
 
-      const now = new Date().toISOString();
+        const now = new Date().toISOString();
 
-      for (let i = 0; i < orderedIds.length; i++) {
-        const id = orderedIds[i]!;
-        const task = taskMap.get(id);
-        if (task) {
-          await this.tasks.update(id, { order: i, updatedAt: now });
+        for (let i = 0; i < orderedIds.length; i++) {
+          const id = orderedIds[i]!;
+          const task = taskMap.get(id);
+          if (task) {
+            await this.tasks.update(id, { order: i, updatedAt: now });
+          }
         }
+      });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
       }
-    });
+      throw error;
+    }
   }
 
   async moveTaskToList(id: string, targetListId: string): Promise<void> {
-    await this.transaction('rw', this.tasks, this.lists, async () => {
-      const task = await this.tasks.get(id);
-      if (!task) throw new Error(`Task not found: ${id}`);
+    try {
+      await this.transaction('rw', this.tasks, this.lists, async () => {
+        const task = await this.tasks.get(id);
+        if (!task) throw new Error(`Task not found: ${id}`);
 
-      const list = await this.lists.get(targetListId);
-      if (!list) throw new Error(`List not found: ${targetListId}`);
+        const list = await this.lists.get(targetListId);
+        if (!list) throw new Error(`List not found: ${targetListId}`);
 
-      // Get max order in target list
-      const maxOrderTask = await this.tasks
-        .where('listId')
-        .equals(targetListId)
-        .reverse()
-        .sortBy('order');
-      const newOrder = maxOrderTask.length > 0 ? (maxOrderTask[0]?.order ?? -1) + 1 : 0;
+        // Get max order in target list
+        const maxOrderTask = await this.tasks
+          .where('listId')
+          .equals(targetListId)
+          .reverse()
+          .sortBy('order');
+        const newOrder = maxOrderTask.length > 0 ? (maxOrderTask[0]?.order ?? -1) + 1 : 0;
 
-      await this.tasks.update(id, {
-        listId: targetListId,
-        order: newOrder,
-        updatedAt: new Date().toISOString(),
+        await this.tasks.update(id, {
+          listId: targetListId,
+          order: newOrder,
+          updatedAt: new Date().toISOString(),
+        });
       });
-    });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
   }
 
   /* ================================================================ */
@@ -558,6 +579,7 @@ export class TodoDatabase extends Dexie {
 
 const MAX_TASKS = 10_000;
 const MAX_LISTS = 1_000;
+export const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export class ImportValidationError extends Error {
   constructor(message: string) {

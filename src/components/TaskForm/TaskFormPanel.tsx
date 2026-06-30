@@ -50,9 +50,11 @@ export function TaskFormPanel() {
     setSubmitting(false);
   }, [editingTaskId.value, taskFormOpen.value]);
 
+  const dirty = title.trim().length > 0 || description.trim().length > 0;
+
   const handleOverlayClick = () => {
-    if (title || description) {
-      // Form is dirty — could show unsaved changes warning
+    if (dirty && !window.confirm('You have unsaved changes. Discard them?')) {
+      return;
     }
     handleClose();
   };

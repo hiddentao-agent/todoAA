@@ -29,11 +29,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       try {
         const db = getDatabase();
 
-        // Test IndexedDB availability with a real open/close round-trip
-        await db.open();
-        db.close();
-
-        // Reopen for real use
+        // Open the database (single open — if this fails, IndexedDB is unavailable)
         await db.open();
 
         // Ensure default list exists

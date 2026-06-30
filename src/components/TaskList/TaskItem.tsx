@@ -1,5 +1,6 @@
 import { CompletionToggle } from './CompletionToggle.tsx';
-import { openTaskForm } from '@/stores/uiStore.ts';
+import { DragHandle } from './DragHandle.tsx';
+import { openTaskForm, activeSort } from '@/stores/uiStore.ts';
 import { toggleTaskCompletion } from '@/stores/taskStore.ts';
 import { getDueDateStatus, formatDate } from '@/utils/date.ts';
 import type { Task } from '@/db/todo-schema.ts';
@@ -42,8 +43,15 @@ export function TaskItem({ task, onDelete }: TaskItemProps) {
     onDelete(task);
   };
 
+  const isManualSort = activeSort.value === 'manual';
+
   return (
-    <div class={`${styles.item} ${task.completed ? styles.completed : ''}`} role="listitem">
+    <div
+      class={`${styles.item} ${task.completed ? styles.completed : ''}`}
+      role="listitem"
+      data-task-id={task.id}
+    >
+      <DragHandle visible={isManualSort} />
       <CompletionToggle
         completed={task.completed}
         taskTitle={task.title}

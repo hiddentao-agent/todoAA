@@ -7,6 +7,7 @@ import { getDatabase } from '@/components/providers/DatabaseProvider.tsx';
 import { getStoredTheme, setStoredTheme } from '@/components/providers/ThemeProvider.tsx';
 import { CloseIcon, DownloadIcon, UploadIcon } from '@/components/Icons/Icons.tsx';
 import { estimateStorage, formatBytes } from '@/utils/storage.ts';
+import { MAX_IMPORT_SIZE } from '@/db/todo-schema.ts';
 import type { ThemePreference } from '@/utils/storage-keys.ts';
 import styles from './SettingsPanel.module.css';
 
@@ -79,10 +80,10 @@ export function SettingsPanel() {
 
     try {
       // Check file size
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > MAX_IMPORT_SIZE) {
         setImportStatus({
           type: 'error',
-          message: `File too large (${formatBytes(file.size)}). Maximum is 5 MB.`,
+          message: `File too large (${formatBytes(file.size)}). Maximum is ${formatBytes(MAX_IMPORT_SIZE)}.`,
         });
         return;
       }

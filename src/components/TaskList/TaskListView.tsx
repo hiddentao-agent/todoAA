@@ -3,6 +3,7 @@ import { visibleTasks, tasks, tasksLoading, tasksError } from '@/stores/derived.
 import { openTaskForm, setFilter } from '@/stores/uiStore.ts';
 import { deleteTask, loadTasks } from '@/stores/taskStore.ts';
 import { TaskItem } from './TaskItem.tsx';
+import { useSortableList } from './SortableList.tsx';
 import { EmptyState } from '@/components/shared/EmptyState.tsx';
 import { ErrorBanner } from '@/components/shared/ErrorBanner.tsx';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog.tsx';
@@ -11,6 +12,7 @@ import styles from './TaskListView.module.css';
 
 export function TaskListView() {
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
+  const listRef = useSortableList();
 
   const handleDelete = (task: Task) => {
     setDeleteTarget(task);
@@ -77,7 +79,7 @@ export function TaskListView() {
 
   return (
     <>
-      <ul class={styles.list} role="list" aria-label="Tasks">
+      <ul ref={listRef} class={styles.list} role="list" aria-label="Tasks">
         {visibleTasks.value.map((task) => (
           <TaskItem key={task.id} task={task} onDelete={handleDelete} />
         ))}

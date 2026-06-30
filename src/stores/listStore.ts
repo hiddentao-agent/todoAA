@@ -1,5 +1,6 @@
 import { signal, computed } from '@preact/signals';
 import type { TodoDatabase, List, ListStats } from '@/db/todo-schema.ts';
+import { STORAGE_KEY_CURRENT_LIST } from '@/utils/storage-keys.ts';
 
 let db: TodoDatabase;
 
@@ -34,7 +35,7 @@ export async function loadLists(): Promise<void> {
   listStats.value = stats;
 
   if (!currentListId.value) {
-    const stored = localStorage.getItem('todo-current-list');
+    const stored = localStorage.getItem(STORAGE_KEY_CURRENT_LIST);
     if (stored && allLists.some((l) => l.id === stored)) {
       currentListId.value = stored;
     } else {
@@ -62,7 +63,7 @@ export async function deleteListCascade(id: string): Promise<void> {
   const allLists = all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     currentListId.value = allLists[0]?.id ?? null;
     if (currentListId.value) {
-      localStorage.setItem('todo-current-list', currentListId.value);
+      localStorage.setItem(STORAGE_KEY_CURRENT_LIST, currentListId.value);
     }
   }
   await loadLists();
@@ -70,5 +71,5 @@ export async function deleteListCascade(id: string): Promise<void> {
 
 export function selectList(id: string): void {
   currentListId.value = id;
-  localStorage.setItem('todo-current-list', id);
+  localStorage.setItem(STORAGE_KEY_CURRENT_LIST, id);
 }

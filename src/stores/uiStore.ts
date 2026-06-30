@@ -1,5 +1,6 @@
 import { signal } from '@preact/signals';
 import type { SortMode } from '@/utils/storage-keys.ts';
+import { STORAGE_KEY_SORT } from '@/utils/storage-keys.ts';
 
 // --- Signals ---
 
@@ -21,7 +22,7 @@ export function setFilter(filter: 'all' | 'active' | 'completed'): void {
 
 export function setSort(sort: SortMode): void {
   activeSort.value = sort;
-  localStorage.setItem('todo-sort', sort);
+  localStorage.setItem(STORAGE_KEY_SORT, sort);
 }
 
 export function toggleSortDirection(): void {
@@ -73,7 +74,7 @@ export function showToast(message: string): void {
 }
 
 export function loadSortPreference(): void {
-  const stored = localStorage.getItem('todo-sort');
+  const stored = localStorage.getItem(STORAGE_KEY_SORT);
   if (stored === 'manual' || stored === 'dueDate' || stored === 'createdAt' || stored === 'priority') {
     activeSort.value = stored;
   }
