@@ -3,6 +3,7 @@ import { useComputed } from '@preact/signals';
 import { sidebarOpen, toggleSidebar, openTaskForm } from '@/stores/uiStore.ts';
 import { currentList } from '@/stores/listStore.ts';
 import { currentListStats } from '@/stores/derived.ts';
+import { HamburgerIcon, PlusIcon } from '@/components/Icons/Icons.tsx';
 import styles from './AppShell.module.css';
 
 interface AppShellProps {
@@ -28,9 +29,7 @@ export function AppShell({ sidebar, filterBar, sortControl, taskList }: AppShell
             aria-controls="sidebar"
             aria-label="Toggle sidebar"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M3 12h18M3 6h18M3 18h18" />
-            </svg>
+            <HamburgerIcon size={24} />
           </button>
           <h1 class={styles.listTitle}>{listTitle}</h1>
           <span class={styles.taskCount} aria-live="polite">
@@ -66,9 +65,7 @@ export function AppShell({ sidebar, filterBar, sortControl, taskList }: AppShell
             transition: 'background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast)',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <PlusIcon size={24} />
         </button>
       </main>
     </div>

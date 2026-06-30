@@ -1,3 +1,4 @@
+import { GripIcon } from '@/components/Icons/Icons.tsx';
 import styles from './DragHandle.module.css';
 
 interface DragHandleProps {
@@ -19,14 +20,7 @@ export function DragHandle({ index, onDragStart, visible }: DragHandleProps) {
       aria-label="Drag to reorder"
       aria-roledescription="sortable"
     >
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-        <circle cx="4" cy="4" r="1.5" />
-        <circle cx="10" cy="4" r="1.5" />
-        <circle cx="4" cy="9" r="1.5" />
-        <circle cx="10" cy="9" r="1.5" />
-        <circle cx="4" cy="14" r="1.5" />
-        <circle cx="10" cy="14" r="1.5" />
-      </svg>
+      <GripIcon size={18} />
     </button>
   );
 }

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
+import { useFocusTrap } from '@/hooks/useFocusTrap.ts';
 import { settingsOpen, closeSettings, showToast } from '@/stores/uiStore.ts';
 import { loadLists } from '@/stores/listStore.ts';
 import { loadTasks } from '@/stores/taskStore.ts';
 import { getDatabase } from '@/components/providers/DatabaseProvider.tsx';
 import { getStoredTheme, setStoredTheme } from '@/components/providers/ThemeProvider.tsx';
+import { CloseIcon, DownloadIcon, UploadIcon } from '@/components/Icons/Icons.tsx';
 import { estimateStorage, formatBytes } from '@/utils/storage.ts';
 import type { ThemePreference } from '@/utils/storage-keys.ts';
 import styles from './SettingsPanel.module.css';
@@ -23,6 +25,7 @@ export function SettingsPanel() {
   const [deleteConfirming, setDeleteConfirming] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const trapRef = useFocusTrap(settingsOpen.value, closeSettings);
 
   useEffect(() => {
     if (settingsOpen.value) {
@@ -133,10 +136,6 @@ export function SettingsPanel() {
     closeSettings();
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeSettings();
-  };
-
   if (!settingsOpen.value) return null;
 
   return (
@@ -147,14 +146,12 @@ export function SettingsPanel() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        onKeyDown={handleKeyDown}
+        ref={trapRef}
       >
         <div class={styles.header}>
           <h2 class={styles.title} id="settings-title">Settings</h2>
           <button class={styles.closeBtn} onClick={closeSettings} aria-label="Close settings">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <CloseIcon size={24} />
           </button>
         </div>
         <div class={styles.body}>
@@ -181,19 +178,11 @@ export function SettingsPanel() {
             <h3 class={styles.sectionTitle}>Data</h3>
             <div class={styles.dataActions}>
               <button class={styles.exportBtn} onClick={handleExport}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
+                <DownloadIcon size={18} />
                 Export Data
               </button>
               <button class={styles.importBtn} onClick={handleImportClick}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
+                <UploadIcon size={18} />
                 Import Data
               </button>
               <input

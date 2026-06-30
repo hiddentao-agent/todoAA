@@ -1,3 +1,4 @@
+import { ClipboardIcon, SearchIcon } from '@/components/Icons/Icons.tsx';
 import styles from './EmptyState.module.css';
 
 interface EmptyStateProps {
@@ -11,16 +12,9 @@ export function EmptyState({ type, onCreateTask, onClearFilter }: EmptyStateProp
     <div class={styles.container} role="status">
       <div class={styles.iconCircle}>
         {type === 'no-tasks' ? (
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-            <rect x="9" y="3" width="6" height="4" rx="1" />
-            <path d="M9 14l2 2 4-4" />
-          </svg>
+          <ClipboardIcon size={40} />
         ) : (
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
+          <SearchIcon size={40} />
         )}
       </div>
       <h3 class={styles.heading}>

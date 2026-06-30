@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TodoDatabase } from '@/db/todo-schema.ts';
+import type { ExportData } from '@/db/todo-schema.ts';
 
 describe('TodoDatabase', () => {
   let db: TodoDatabase;
@@ -257,6 +258,103 @@ describe('TodoDatabase', () => {
       });
 
       await expect(db.importJSON(data)).rejects.toThrow('references unknown list');
+    });
+
+    it('rejects unsupported version', async () => {
+      const payload = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        lists: [],
+        tasks: [],
+      };
+      await expect(db.importJSON(payload as never)).rejects.toThrow('Unsupported format version');
+    });
+
+    it('rejects invalid root shape', async () => {
+      await expect(db.importJSON({} as never)).rejects.toThrow();
+      await expect(db.importJSON({ version: 1 } as never)).rejects.toThrow('Invalid format');
+    });
+
+    it('rejects too many lists', async () => {
+      const payload = {
+        version: 1 as const,
+        exportedAt: new Date().toISOString(),
+        lists: Array.from({ length: 1001 }, (_, i) => ({
+          id: `l${i}`,
+          name: `List ${i}`,
+          isDefault: i === 0,
+        })),
+        tasks: [],
+      };
+      await expect(db.importJSON(payload as ExportData)).rejects.toThrow('Too many records');
+    });
+
+    it('rejects too many tasks', async () => {
+      const payload = {
+        version: 1 as const,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l1', name: 'Test', isDefault: true }],
+        tasks: Array.from({ length: 10001 }, (_, i) => ({
+          id: `t${i}`,
+          title: `Task ${i}`,
+          listId: 'l1',
+          priority: 'none',
+          completed: false,
+          order: i,
+        })),
+      };
+      await expect(db.importJSON(payload as ExportData)).rejects.toThrow('Too many records');
+    });
+
+    it('rejects invalid priority', async () => {
+      const payload = {
+        version: 1 as const,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l1', name: 'Test', isDefault: true }],
+        tasks: [{ id: 't1', title: 'Test Task', listId: 'l1', priority: 'urgent', completed: false, order: 0 }],
+      };
+      await expect(db.importJSON(payload as ExportData)).rejects.toThrow('invalid priority');
+    });
+
+    it('rejects malformed due date', async () => {
+      const payload = {
+        version: 1 as const,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l1', name: 'Test', isDefault: true }],
+        tasks: [{ id: 't1', title: 'Test Task', listId: 'l1', priority: 'none', completed: false, order: 0, dueDate: 'not-a-date' }],
+      };
+      await expect(db.importJSON(payload as ExportData)).rejects.toThrow('invalid due date');
+    });
+
+    it('rejects control characters in title', async () => {
+      const payload = {
+        version: 1 as const,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l1', name: 'Test', isDefault: true }],
+        tasks: [{ id: 't1', title: 'Test Bad', listId: 'l1', priority: 'none', completed: false, order: 0 }],
+      };
+      await expect(db.importJSON(payload as ExportData)).rejects.toThrow();
+    });
+
+    it('performs mid-batch rollback on error', async () => {
+      const list = await db.ensureDefaultList();
+      await db.createTask({ title: 'Existing task', listId: list.id });
+
+      const payload = {
+        version: 1 as const,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l2', name: 'New List', isDefault: false }],
+        tasks: [
+          { id: 'valid-task', title: 'Valid task', listId: 'l2', priority: 'none', completed: false, order: 0 },
+          { id: 'bad-task', title: 'Bad task', listId: 'nonexistent-list', priority: 'none', completed: false, order: 1 },
+        ],
+      };
+
+      await expect(db.importJSON(payload as ExportData)).rejects.toThrow('references unknown list');
+
+      const allTasks = await db.tasks.toArray();
+      expect(allTasks).toHaveLength(1);
+      expect(allTasks[0]!.title).toBe('Existing task');
     });
   });
 

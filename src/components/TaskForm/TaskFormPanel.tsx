@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { useComputed } from '@preact/signals';
+import { useFocusTrap } from '@/hooks/useFocusTrap.ts';
 import { taskFormOpen, editingTaskId, closeTaskForm, showToast } from '@/stores/uiStore.ts';
 import { visibleTasks } from '@/stores/derived.ts';
 import { lists } from '@/stores/listStore.ts';
 import { createTask, updateTask } from '@/stores/taskStore.ts';
 import { sanitizeString } from '@/utils/sanitize.ts';
+import { CloseIcon } from '@/components/Icons/Icons.tsx';
 import styles from './TaskFormPanel.module.css';
 
 const PRIORITIES = ['none', 'low', 'medium', 'high'] as const;
@@ -17,7 +19,12 @@ export function TaskFormPanel() {
   const [listId, setListId] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleClose = () => {
+    closeTaskForm();
+  };
+
+  const trapRef = useFocusTrap(taskFormOpen.value, handleClose);
 
   const editingTask = useComputed(() => {
     if (!editingTaskId.value) return undefined;
@@ -42,10 +49,6 @@ export function TaskFormPanel() {
     setErrors({});
     setSubmitting(false);
   }, [editingTaskId.value, taskFormOpen.value]);
-
-  const handleClose = () => {
-    closeTaskForm();
-  };
 
   const handleOverlayClick = () => {
     if (title || description) {
@@ -120,11 +123,6 @@ export function TaskFormPanel() {
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') handleClose();
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit(e);
-  };
-
   if (!taskFormOpen.value) return null;
 
   return (
@@ -135,17 +133,14 @@ export function TaskFormPanel() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="form-title"
-        ref={panelRef}
-        onKeyDown={handleKeyDown}
+        ref={trapRef}
       >
         <div class={styles.header}>
           <h2 class={styles.title} id="form-title">
             {editingTask.value ? 'Edit Task' : 'New Task'}
           </h2>
           <button class={styles.closeBtn} onClick={handleClose} aria-label="Close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <CloseIcon size={24} />
           </button>
         </div>
         <form class={styles.body} onSubmit={handleSubmit}>

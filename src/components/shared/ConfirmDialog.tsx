@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useFocusTrap } from '@/hooks/useFocusTrap.ts';
 import styles from './ConfirmDialog.module.css';
 
 interface ConfirmDialogProps {
@@ -20,15 +20,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    cancelRef.current?.focus();
-  }, []);
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') onCancel();
-  };
+  const trapRef = useFocusTrap(true, onCancel);
 
   return (
     <>
@@ -39,12 +31,12 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby="confirm-message"
-        onKeyDown={handleKeyDown}
+        ref={trapRef}
       >
         <h3 class={styles.title} id="confirm-title">{title}</h3>
         <p class={styles.message} id="confirm-message">{message}</p>
         <div class={styles.actions}>
-          <button class={styles.cancelBtn} onClick={onCancel} ref={cancelRef}>
+          <button class={styles.cancelBtn} onClick={onCancel}>
             {cancelLabel}
           </button>
           <button

@@ -1,3 +1,4 @@
+import { CheckIcon } from '@/components/Icons/Icons.tsx';
 import styles from './CompletionToggle.module.css';
 
 interface CompletionToggleProps {
@@ -20,19 +21,7 @@ export function CompletionToggle({ completed, taskTitle, onToggle }: CompletionT
       onClick={onToggle}
     >
       <span class={styles.circle}>
-        <svg
-          class={styles.checkmark}
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="3"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M20 6L9 17l-5-5" />
-        </svg>
+        <CheckIcon class={styles.checkmark} size={24} />
       </span>
     </button>
   );

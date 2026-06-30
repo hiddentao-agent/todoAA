@@ -10,6 +10,7 @@ import { SettingsPanel } from '@/components/Settings/SettingsPanel.tsx';
 import { OfflineIndicator } from '@/components/shared/OfflineIndicator.tsx';
 import { UpdateBanner } from '@/components/shared/UpdateBanner.tsx';
 import { Toast } from '@/components/shared/Toast.tsx';
+import { Announcer } from '@/components/shared/Announcer.tsx';
 
 export function App() {
   return (
@@ -38,6 +39,7 @@ export function App() {
             <OfflineIndicator />
             <UpdateBanner />
             <Toast />
+            <Announcer />
           </>
         )}
       </DatabaseProvider>

@@ -11,6 +11,7 @@ export const settingsOpen = signal<boolean>(false);
 export const taskFormOpen = signal<boolean>(false);
 export const editingTaskId = signal<string | null>(null);
 export const toastMessage = signal<string | null>(null);
+export const announcerMessage = signal<string>('');
 
 // --- Operations ---
 
@@ -53,8 +54,17 @@ export function closeTaskForm(): void {
   editingTaskId.value = null;
 }
 
+export function announce(message: string): void {
+  // Clear first so the same message re-triggers the live region
+  announcerMessage.value = '';
+  requestAnimationFrame(() => {
+    announcerMessage.value = message;
+  });
+}
+
 export function showToast(message: string): void {
   toastMessage.value = message;
+  announce(message);
   setTimeout(() => {
     if (toastMessage.value === message) {
       toastMessage.value = null;
