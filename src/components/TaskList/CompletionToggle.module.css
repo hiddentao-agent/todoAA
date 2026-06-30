@@ -1,0 +1,60 @@
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: transform var(--transition-fast);
+  padding: 0;
+}
+
+.toggle:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.toggle:active {
+  transform: scale(0.9);
+}
+
+.circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.toggle:hover .circle {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.checked .circle {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.checked:hover .circle {
+  background: var(--color-success);
+  filter: brightness(0.9);
+}
+
+.checkmark {
+  color: white;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.checked .checkmark {
+  opacity: 1;
+  transform: scale(1);
+}

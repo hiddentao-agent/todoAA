@@ -1,0 +1,36 @@
+{
+  "name": "todo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "tsc -b --noEmit",
+    "audit": "npm audit --production"
+  },
+  "dependencies": {
+    "@formkit/drag-and-drop": "^0.6.1",
+    "@preact/signals": "2.1.1",
+    "dexie": "4.4.4",
+    "preact": "10.29.3"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/preact": "3.2.4",
+    "@types/node": "24.13.2",
+    "@vitest/coverage-v8": "4.1.9",
+    "fake-indexeddb": "6.2.3",
+    "jsdom": "26.1.0",
+    "typescript": "5.8.3",
+    "vite": "6.3.5",
+    "vite-plugin-pwa": "0.21.2",
+    "vitest": "4.1.9"
+  }
+}
