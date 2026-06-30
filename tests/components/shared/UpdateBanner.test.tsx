@@ -73,8 +73,22 @@ describe('UpdateBanner', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('calls postMessage and reloads page when Update is clicked', async () => {
+  it('calls postMessage when Update is clicked, defers reload to controllerchange', async () => {
     mockRegistration.waiting = mockWorker;
+
+    // Track controllerchange listener
+    let controllerChangeCb: (() => void) | undefined;
+    const originalSW = navigator.serviceWorker;
+    Object.defineProperty(navigator, 'serviceWorker', {
+      writable: true,
+      configurable: true,
+      value: {
+        ...originalSW,
+        addEventListener: vi.fn((_event: string, cb: any) => {
+          controllerChangeCb = cb;
+        }),
+      },
+    });
 
     render(<UpdateBanner />);
 
@@ -87,6 +101,14 @@ describe('UpdateBanner', () => {
     expect(mockWorker.postMessage).toHaveBeenCalledWith({
       type: 'SKIP_WAITING',
     });
+    // Reload should NOT happen synchronously — it's deferred to controllerchange
+    expect(window.location.reload).not.toHaveBeenCalled();
+
+    // Simulate controllerchange
+    await act(async () => {
+      controllerChangeCb!();
+    });
+
     expect(window.location.reload).toHaveBeenCalledTimes(1);
   });
 

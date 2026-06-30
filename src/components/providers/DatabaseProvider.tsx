@@ -49,7 +49,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
         // Request persistent storage so the browser doesn't evict data
         // under storage pressure (spec §7.2, Phase 5 task 10).
-        requestPersistentStorage();
+        await requestPersistentStorage();
       } catch (error) {
         if (error instanceof Error) {
           // Check if IndexedDB is unavailable
