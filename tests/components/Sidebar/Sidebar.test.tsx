@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { Sidebar } from '@/components/Sidebar/Sidebar.tsx';
 import { lists, currentListId, listStats } from '@/stores/listStore.ts';
-import { sidebarOpen, settingsOpen } from '@/stores/uiStore.ts';
+import { sidebarOpen, settingsOpen, showToast } from '@/stores/uiStore.ts';
 import { createList, renameList, deleteListCascade } from '@/stores/listStore.ts';
 
 // Mock listStore async functions that touch the database
@@ -15,6 +15,16 @@ vi.mock('@/stores/listStore.ts', async (importOriginal) => {
     createList: vi.fn(),
     renameList: vi.fn(),
     deleteListCascade: vi.fn(),
+  };
+});
+
+// Mock showToast to verify error surfacing
+vi.mock('@/stores/uiStore.ts', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    showToast: vi.fn(),
   };
 });
 
@@ -300,6 +310,21 @@ describe('Sidebar — create list', () => {
     // Input should still be visible (creating remains true)
     expect(screen.getByLabelText('New list name')).toBeDefined();
   });
+
+  it('handles create failure gracefully', async () => {
+    // @ts-expect-error createList is mocked
+    createList.mockRejectedValueOnce(new Error('Create failed'));
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Create new list'));
+    const input = screen.getByLabelText('New list name');
+    fireEvent.input(input, { target: { value: 'Shopping' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => {
+      // Input should remain visible (creating stays true on error)
+      expect(screen.getByLabelText('New list name')).toBeDefined();
+    });
+    expect(showToast).toHaveBeenCalledWith('Create failed');
+  });
 });
 
 describe('Sidebar — rename list', () => {
@@ -396,10 +421,11 @@ describe('Sidebar — rename list', () => {
     const editInput = screen.getByDisplayValue('Work');
     fireEvent.input(editInput, { target: { value: 'Office' } });
     fireEvent.keyDown(editInput, { key: 'Enter' });
-    // Should not throw — component catches the error silently
+    // Should not throw — component surfaces error via toast
     await vi.waitFor(() => {
       expect(screen.queryByDisplayValue('Office')).toBeNull();
     });
+    expect(showToast).toHaveBeenCalledWith('Rename failed');
   });
 });
 
@@ -455,6 +481,7 @@ describe('Sidebar — delete list', () => {
     await vi.waitFor(() => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
+    expect(showToast).toHaveBeenCalledWith('Delete failed');
   });
 });
 
