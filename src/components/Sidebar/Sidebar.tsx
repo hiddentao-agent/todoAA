@@ -3,7 +3,7 @@ import { useComputed } from '@preact/signals';
 import { currentListId, selectList, createList, renameList, deleteListCascade } from '@/stores/listStore.ts';
 import { MAX_LIST_NAME_LENGTH } from '@/db/todo-schema.ts';
 import { listsWithCounts } from '@/stores/derived.ts';
-import { sidebarOpen, closeSidebar, openSettings } from '@/stores/uiStore.ts';
+import { sidebarOpen, closeSidebar, openSettings, showToast } from '@/stores/uiStore.ts';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog.tsx';
 import { estimateStorage, formatBytes } from '@/utils/storage.ts';
 import { PlusIcon, CloseIcon, ListIcon, EditIcon, TrashIcon, SettingsIcon } from '@/components/Icons/Icons.tsx';
@@ -56,8 +56,8 @@ export function Sidebar() {
       await createList(name);
       setNewListName('');
       setCreating(false);
-    } catch {
-      // silently fail — createList validates
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Failed to create list');
     }
   };
 
@@ -83,8 +83,8 @@ export function Sidebar() {
     }
     try {
       await renameList(editing.id, name);
-    } catch {
-      // fail silently
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Failed to rename list');
     }
     setEditing(null);
   };
@@ -102,8 +102,8 @@ export function Sidebar() {
     if (!deleteTarget) return;
     try {
       await deleteListCascade(deleteTarget.id);
-    } catch {
-      // fail silently
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Failed to delete list');
     }
     setDeleteTarget(null);
   };

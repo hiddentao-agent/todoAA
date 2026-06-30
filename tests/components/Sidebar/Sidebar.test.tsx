@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { Sidebar } from '@/components/Sidebar/Sidebar.tsx';
 import { lists, currentListId, listStats } from '@/stores/listStore.ts';
-import { sidebarOpen, settingsOpen } from '@/stores/uiStore.ts';
+import { sidebarOpen, settingsOpen, toastMessage } from '@/stores/uiStore.ts';
 import { createList, renameList, deleteListCascade } from '@/stores/listStore.ts';
 
 // Mock listStore async functions that touch the database
@@ -300,6 +300,34 @@ describe('Sidebar — create list', () => {
     // Input should still be visible (creating remains true)
     expect(screen.getByLabelText('New list name')).toBeDefined();
   });
+
+  it('handles create failure gracefully and shows error toast', async () => {
+    toastMessage.value = null;
+    // @ts-expect-error createList is mocked
+    createList.mockRejectedValueOnce(new Error('Quota exceeded'));
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Create new list'));
+    const input = screen.getByLabelText('New list name');
+    fireEvent.input(input, { target: { value: 'Shopping' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => {
+      expect(toastMessage.value).toBe('Quota exceeded');
+    });
+  });
+
+  it('shows fallback message when create rejection is not an Error', async () => {
+    toastMessage.value = null;
+    // @ts-expect-error createList is mocked
+    createList.mockRejectedValueOnce('oops');
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Create new list'));
+    const input = screen.getByLabelText('New list name');
+    fireEvent.input(input, { target: { value: 'Shopping' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => {
+      expect(toastMessage.value).toBe('Failed to create list');
+    });
+  });
 });
 
 describe('Sidebar — rename list', () => {
@@ -388,7 +416,8 @@ describe('Sidebar — rename list', () => {
     expect(screen.getByText('Work')).toBeDefined();
   });
 
-  it('handles rename failure gracefully', async () => {
+  it('handles rename failure gracefully and shows error toast', async () => {
+    toastMessage.value = null;
     // @ts-expect-error renameList is mocked
     renameList.mockRejectedValueOnce(new Error('Rename failed'));
     render(<Sidebar />);
@@ -396,9 +425,24 @@ describe('Sidebar — rename list', () => {
     const editInput = screen.getByDisplayValue('Work');
     fireEvent.input(editInput, { target: { value: 'Office' } });
     fireEvent.keyDown(editInput, { key: 'Enter' });
-    // Should not throw — component catches the error silently
+    // Should exit edit mode and show error toast
     await vi.waitFor(() => {
       expect(screen.queryByDisplayValue('Office')).toBeNull();
+    });
+    expect(toastMessage.value).toBe('Rename failed');
+  });
+
+  it('shows fallback message when rename rejection is not an Error', async () => {
+    toastMessage.value = null;
+    // @ts-expect-error renameList is mocked
+    renameList.mockRejectedValueOnce({ details: 'conflict' });
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Rename list: Work'));
+    const editInput = screen.getByDisplayValue('Work');
+    fireEvent.input(editInput, { target: { value: 'Office' } });
+    fireEvent.keyDown(editInput, { key: 'Enter' });
+    await vi.waitFor(() => {
+      expect(toastMessage.value).toBe('Failed to rename list');
     });
   });
 });
@@ -446,7 +490,8 @@ describe('Sidebar — delete list', () => {
     expect(screen.getByText(/all 12 tasks/)).toBeDefined();
   });
 
-  it('handles delete failure gracefully', async () => {
+  it('handles delete failure gracefully and shows error toast', async () => {
+    toastMessage.value = null;
     // @ts-expect-error deleteListCascade is mocked
     deleteListCascade.mockRejectedValueOnce(new Error('Delete failed'));
     render(<Sidebar />);
@@ -454,6 +499,19 @@ describe('Sidebar — delete list', () => {
     fireEvent.click(screen.getByText('Delete'));
     await vi.waitFor(() => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+    expect(toastMessage.value).toBe('Delete failed');
+  });
+
+  it('shows fallback message when delete rejection is not an Error', async () => {
+    toastMessage.value = null;
+    // @ts-expect-error deleteListCascade is mocked
+    deleteListCascade.mockRejectedValueOnce(42);
+    render(<Sidebar />);
+    fireEvent.click(screen.getByLabelText('Delete list: Work'));
+    fireEvent.click(screen.getByText('Delete'));
+    await vi.waitFor(() => {
+      expect(toastMessage.value).toBe('Failed to delete list');
     });
   });
 });
