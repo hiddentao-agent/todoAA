@@ -56,7 +56,7 @@ export async function deleteListCascade(id: string): Promise<void> {
   // If we deleted the current list, switch to default
   if (currentListId.value === id) {
     const all = await db.lists.toArray();
-  const allLists = all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const allLists = all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     currentListId.value = allLists[0]?.id ?? null;
     if (currentListId.value) {
       localStorage.setItem(STORAGE_KEY_CURRENT_LIST, currentListId.value);

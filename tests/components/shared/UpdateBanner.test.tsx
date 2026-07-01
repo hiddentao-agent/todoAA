@@ -47,7 +47,7 @@ describe('UpdateBanner', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText('A new version is available.')).toBeDefined();
+    expect(screen.getByText('A new version is available. You may lose unsaved changes.')).toBeDefined();
   });
 
   it('shows Update and Dismiss buttons when update is available', async () => {
@@ -181,7 +181,7 @@ describe('UpdateBanner', () => {
       });
 
       // Banner should be visible
-      expect(screen.getByText('A new version is available.')).toBeDefined();
+      expect(screen.getByText('A new version is available. You may lose unsaved changes.')).toBeDefined();
       expect(screen.getByText('Update')).toBeDefined();
     });
 

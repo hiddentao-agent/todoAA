@@ -58,7 +58,7 @@ export function UpdateBanner() {
       }}
       role="alert"
     >
-      <span>A new version is available.</span>
+      <span>A new version is available. You may lose unsaved changes.</span>
       <button
         onClick={handleUpdate}
         style={{
