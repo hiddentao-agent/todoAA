@@ -30,8 +30,10 @@ export function UpdateBanner() {
 
   const handleUpdate = () => {
     if (waitingWorker) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-      window.location.reload();
     }
   };
 

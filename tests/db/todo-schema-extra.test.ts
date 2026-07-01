@@ -171,6 +171,172 @@ describe('TodoDatabase — QuotaExceededError handling', () => {
       ).rejects.toThrow('Update failed');
     });
   });
+
+  /* ---------------------------------------------------------- */
+  /*  createList — quota exceeded in Dexie add                   */
+  /* ---------------------------------------------------------- */
+
+  describe('createList', () => {
+    it('throws QuotaExceededError when Dexie add throws quota error', async () => {
+      vi.spyOn(db.lists, 'add').mockRejectedValueOnce(
+        new DOMException('Quota exceeded', 'QuotaExceededError'),
+      );
+
+      await expect(
+        db.createList('New List'),
+      ).rejects.toThrow(QuotaExceededError);
+    });
+
+    it('re-throws non-quota errors normally', async () => {
+      vi.spyOn(db.lists, 'add').mockRejectedValueOnce(
+        new Error('Add failed'),
+      );
+
+      await expect(
+        db.createList('New List'),
+      ).rejects.toThrow('Add failed');
+    });
+  });
+
+  /* ---------------------------------------------------------- */
+  /*  renameList — quota exceeded in Dexie update                */
+  /* ---------------------------------------------------------- */
+
+  describe('renameList', () => {
+    it('throws QuotaExceededError when Dexie update throws quota error', async () => {
+      const list = await db.createList('Old Name');
+
+      vi.spyOn(db.lists, 'update').mockRejectedValueOnce(
+        new DOMException('Quota exceeded', 'QuotaExceededError'),
+      );
+
+      await expect(
+        db.renameList(list.id, 'New Name'),
+      ).rejects.toThrow(QuotaExceededError);
+    });
+
+    it('re-throws non-quota errors normally', async () => {
+      const list = await db.createList('Old Name');
+
+      vi.spyOn(db.lists, 'update').mockRejectedValueOnce(
+        new Error('Rename failed'),
+      );
+
+      await expect(
+        db.renameList(list.id, 'New Name'),
+      ).rejects.toThrow('Rename failed');
+    });
+  });
+
+  /* ---------------------------------------------------------- */
+  /*  deleteListCascade — quota exceeded in transaction           */
+  /* ---------------------------------------------------------- */
+
+  describe('deleteListCascade', () => {
+    it('throws QuotaExceededError when transaction throws quota error', async () => {
+      const list = await db.createList('Delete me');
+
+      // Make the outer lists.get succeed but the transaction throw
+      vi.spyOn(db.lists, 'delete').mockRejectedValueOnce(
+        new DOMException('Quota exceeded', 'QuotaExceededError'),
+      );
+
+      await expect(
+        db.deleteListCascade(list.id),
+      ).rejects.toThrow(QuotaExceededError);
+    });
+
+    it('re-throws non-quota errors normally', async () => {
+      const list = await db.createList('Delete me');
+      await db.tasks.add({
+        id: 't-fail',
+        title: 'Task in list',
+        description: null,
+        dueDate: null,
+        priority: 'none',
+        completed: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        listId: list.id,
+        order: 0,
+      });
+
+      vi.spyOn(db.lists, 'delete').mockRejectedValueOnce(
+        new Error('Delete failed'),
+      );
+
+      await expect(
+        db.deleteListCascade(list.id),
+      ).rejects.toThrow('Delete failed');
+    });
+  });
+
+  /* ---------------------------------------------------------- */
+  /*  deleteAllData — quota exceeded in transaction               */
+  /* ---------------------------------------------------------- */
+
+  describe('deleteAllData', () => {
+    it('throws QuotaExceededError when transaction throws quota error', async () => {
+      vi.spyOn(db.tasks, 'clear').mockRejectedValueOnce(
+        new DOMException('Quota exceeded', 'QuotaExceededError'),
+      );
+
+      await expect(
+        db.deleteAllData(),
+      ).rejects.toThrow(QuotaExceededError);
+    });
+
+    it('re-throws non-quota errors normally', async () => {
+      vi.spyOn(db.tasks, 'clear').mockRejectedValueOnce(
+        new Error('Clear failed'),
+      );
+
+      await expect(
+        db.deleteAllData(),
+      ).rejects.toThrow('Clear failed');
+    });
+  });
+
+  /* ---------------------------------------------------------- */
+  /*  importJSON — quota exceeded in transaction                  */
+  /* ---------------------------------------------------------- */
+
+  describe('importJSON', () => {
+    it('throws QuotaExceededError when transaction throws quota error', async () => {
+      const payload: ExportData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l-import', name: 'Imported', isDefault: false }],
+        tasks: [],
+      };
+
+      // Make the transaction throw a quota error
+      vi.spyOn(db.lists, 'toArray').mockRejectedValueOnce(
+        new DOMException('Quota exceeded', 'QuotaExceededError'),
+      );
+
+      await expect(
+        db.importJSON(payload),
+      ).rejects.toThrow(QuotaExceededError);
+    });
+
+    it('re-throws non-quota errors normally', async () => {
+      const payload: ExportData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        lists: [{ id: 'l-import', name: 'Imported', isDefault: false }],
+        tasks: [],
+      };
+
+      vi.spyOn(db.lists, 'toArray').mockRejectedValueOnce(
+        new Error('Transaction failed'),
+      );
+
+      await expect(
+        db.importJSON(payload),
+      ).rejects.toThrow('Transaction failed');
+    });
+  });
 });
 
 /* ---------------------------------------------------------------- */
@@ -395,7 +561,7 @@ describe('validateImportPayload', () => {
     expect(err!.message).toMatch(/missing or invalid name/);
   });
 
-  it('trims whitespace-only name (still passes because sanitize only checks control chars)', () => {
+  it('rejects whitespace-only list name', () => {
     const payload: unknown = {
       version: 1,
       exportedAt: '2024-01-01T00:00:00.000Z',
@@ -403,9 +569,22 @@ describe('validateImportPayload', () => {
       tasks: [],
     };
     const err = validateImportPayload(payload);
-    // sanitizeString('   ') returns '' without throwing.
-    // The length check is against the original (untrimmed) value '   ' which is length 3.
-    expect(err).toBeNull();
+    // sanitizeString('   ') returns '' — must be non-empty after sanitization
+    expect(err).toBeInstanceOf(ImportValidationError);
+    expect(err!.message).toMatch(/name must be 1–200 characters/);
+  });
+
+  it('rejects whitespace-only task title', () => {
+    const payload: unknown = {
+      version: 1,
+      exportedAt: '2024-01-01T00:00:00.000Z',
+      lists: [{ id: 'l1', name: 'List', isDefault: true }],
+      tasks: [{ id: 't1', title: '   ', listId: 'l1', priority: 'none', completed: false }],
+    };
+    const err = validateImportPayload(payload);
+    // sanitizeString('   ') returns '' — must be non-empty after sanitization
+    expect(err).toBeInstanceOf(ImportValidationError);
+    expect(err!.message).toMatch(/title must be 1–500 characters/);
   });
 
   it('rejects list with name containing control characters', () => {

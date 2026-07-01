@@ -151,7 +151,14 @@ export class TodoDatabase extends Dexie {
       createdAt: now,
       updatedAt: now,
     };
-    await this.lists.add(list);
+    try {
+      await this.lists.add(list);
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
     return list;
   }
 
@@ -160,10 +167,17 @@ export class TodoDatabase extends Dexie {
     if (!sanitized || sanitized.length > MAX_LIST_NAME_LENGTH) {
       throw new Error(`List name must be 1–${MAX_LIST_NAME_LENGTH} characters`);
     }
-    await this.lists.update(id, {
-      name: sanitized,
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      await this.lists.update(id, {
+        name: sanitized,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
   }
 
   async deleteListCascade(id: string): Promise<void> {
@@ -172,10 +186,17 @@ export class TodoDatabase extends Dexie {
     if (list.isDefault) {
       throw new Error('Cannot delete the default list');
     }
-    await this.transaction('rw', this.tasks, this.lists, async () => {
-      await this.tasks.where('listId').equals(id).delete();
-      await this.lists.delete(id);
-    });
+    try {
+      await this.transaction('rw', this.tasks, this.lists, async () => {
+        await this.tasks.where('listId').equals(id).delete();
+        await this.lists.delete(id);
+      });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
   }
 
   async getAllLists(): Promise<List[]> {
@@ -491,7 +512,8 @@ export class TodoDatabase extends Dexie {
       throw validationError;
     }
 
-    return this.transaction('rw', this.tasks, this.lists, async () => {
+    try {
+      return await this.transaction('rw', this.tasks, this.lists, async () => {
       const existingLists = await this.lists.toArray();
       const existingListIds = new Set(existingLists.map((l) => l.id));
       const existingTasks = await this.tasks.toArray();
@@ -552,6 +574,12 @@ export class TodoDatabase extends Dexie {
 
       return { listsImported, listsSkipped, tasksImported, tasksSkipped };
     });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
   }
 
   /* ================================================================ */
@@ -559,10 +587,17 @@ export class TodoDatabase extends Dexie {
   /* ================================================================ */
 
   async deleteAllData(): Promise<void> {
-    await this.transaction('rw', this.tasks, this.lists, async () => {
-      await this.tasks.clear();
-      await this.lists.clear();
-    });
+    try {
+      await this.transaction('rw', this.tasks, this.lists, async () => {
+        await this.tasks.clear();
+        await this.lists.clear();
+      });
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw new QuotaExceededError();
+      }
+      throw error;
+    }
     await this.ensureDefaultList();
   }
 }
@@ -631,14 +666,15 @@ export function validateImportPayload(data: unknown): ImportValidationError | nu
     if (!list.name || typeof list.name !== 'string') {
       return new ImportValidationError(`List '${list.id}': missing or invalid name`);
     }
+    let sanitizedName: string;
     try {
-      sanitizeString(list.name);
+      sanitizedName = sanitizeString(list.name);
     } catch (e) {
       return new ImportValidationError(
         `List '${list.id}': ${(e as SanitizationError).message}`,
       );
     }
-    if (typeof list.name === 'string' && (list.name.length === 0 || list.name.length > MAX_LIST_NAME_LENGTH)) {
+    if (sanitizedName.length === 0 || sanitizedName.length > MAX_LIST_NAME_LENGTH) {
       return new ImportValidationError(`List '${list.id}': name must be 1–${MAX_LIST_NAME_LENGTH} characters`);
     }
   }
@@ -652,14 +688,15 @@ export function validateImportPayload(data: unknown): ImportValidationError | nu
     if (!task.title || typeof task.title !== 'string') {
       return new ImportValidationError(`Task '${task.id}': missing or invalid title`);
     }
+    let sanitizedTitle: string;
     try {
-      sanitizeString(task.title);
+      sanitizedTitle = sanitizeString(task.title);
     } catch (e) {
       return new ImportValidationError(
         `Task '${task.id}': ${(e as SanitizationError).message}`,
       );
     }
-    if (typeof task.title === 'string' && (task.title.length === 0 || task.title.length > MAX_TITLE_LENGTH)) {
+    if (sanitizedTitle.length === 0 || sanitizedTitle.length > MAX_TITLE_LENGTH) {
       return new ImportValidationError(`Task '${task.id}': title must be 1–${MAX_TITLE_LENGTH} characters`);
     }
     if (task.description != null && typeof task.description === 'string') {
