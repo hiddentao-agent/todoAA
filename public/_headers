@@ -6,7 +6,12 @@
 /sw.js
   Cache-Control: no-cache
 
-# HTML and other non-hashed files — always revalidate, plus security headers
-/*
+# HTML entry points — always revalidate (never cache)
+/
   Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+
+# Security headers (all responses) — no Cache-Control here to avoid overriding asset rules
+/*
   Content-Security-Policy: frame-ancestors 'none'
